@@ -1,31 +1,23 @@
 import { connectDB } from "@/helper/db";
+import { User } from "@/models/user";
 import { NextRequest, NextResponse } from "next/server";
 
 connectDB();
 
-export function GET(request) {
-  const users = [
-    {
-      name: "Ram Kumar",
-      phone: 1334,
-      course: "java",
-    },
-    {
-      name: "Ankit Kumar",
-      phone: 1334,
-      course: "B pharma",
-    },
-    {
-      name: "Shayam Kumar",
-      phone: 1334,
-      course: "Engg",
-    },
-    {
-      name: "Manmohan Kumar",
-      phone: 1334,
-      course: "cpp",
-    },
-  ];
+export async function GET(request) {
+  let users = [];
+  try {
+    // users = await User.find();
+    // users = await User.find().select("-password");
+    // users = await User.find().select("-_id");
+    users = await User.find().select("-__v");
+  } catch (error) {
+    console.log(error);
+    return NextResponse({
+      message: "Couldn't find users",
+      status: true,
+    });
+  }
   return NextResponse.json(users);
 }
 
@@ -39,22 +31,32 @@ export async function POST(request) {
   // const jsonData = await request.json();
   // console.log(jsonData);
 
-  const textData = await request.text();
-  console.log(textData);
+  // const textData = await request.text();
+  // console.log(textData);
 
-  return NextResponse.json({
-    message: "post data successfully",
+  // return NextResponse.json({
+  //   message: "post data successfully",
+  // });
+
+  const { name, email, password, about, profileUrl } = await request.json();
+  const user = new User({
+    name,
+    email,
+    password,
+    profileUrl,
+    about,
   });
-}
 
-export function DELETE(request) {
-  console.log("deleted api called");
-  return NextResponse.json(
-    {
-      message: "deleted successfully",
-      status: true,
-    },
-    { status: 201, statusText: "Deleted successfully" }
-  );
+  try {
+    const createdUser = await user.save();
+    const response = NextResponse.json(createdUser, {
+      status: 202,
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({
+      message: "failed to create user!",
+    });
+  }
 }
-export function PUT() {}

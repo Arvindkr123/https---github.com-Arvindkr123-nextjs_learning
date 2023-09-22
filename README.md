@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Created Api in next js to Get the user from backend
 
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```javascript
+export async function GET(request) {
+  let users = [];
+  try {
+    users = await User.find();
+  } catch (error) {
+    console.log(error);
+    return NextResponse({
+      message: "Couldn't find users",
+      status: true,
+    });
+  }
+  return NextResponse.json(users);
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## CREATED API TO POST THE USER DATA
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```javascript
+export async function POST(request) {
+  // const body = request.body;
+  // console.log("this is body of req ", body);
+  // console.log("method of the body", request.method);
+  // console.log("cookies", request.cookies);
+  // console.log("header", request.headers);
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+  // const jsonData = await request.json();
+  // console.log(jsonData);
 
-## Learn More
+  // const textData = await request.text();
+  // console.log(textData);
 
-To learn more about Next.js, take a look at the following resources:
+  // return NextResponse.json({
+  //   message: "post data successfully",
+  // });
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  const { name, email, password, about, profileUrl } = await request.json();
+  const user = new User({
+    name,
+    email,
+    password,
+    profileUrl,
+    about,
+  });
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+  try {
+    const createdUser = await user.save();
+    const response = NextResponse.json(createdUser, {
+      status: 202,
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({
+      message: "failed to create user!",
+    });
+  }
+}
+```
 
-## Deploy on Vercel
+```javascript
+// Get the single user from the server
+export async function GET(request, { params }) {
+  const { userId } = params;
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (error) {
+    return NextResponse.json({ error: error });
+  }
+  return NextResponse.json(user);
+}
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+// delete user from the database
+export async function DELETE(request, { params }) {
+  const { userId } = params;
+  try {
+    await User.deleteOne({
+      _id: userId,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      message: "error in deleting user",
+      success: true,
+    });
+  }
+  return NextResponse.json({
+    message: "deleted user successfully",
+    success: true,
+  });
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```javascript
+// update user
+export const PUT = async (request, { params }) => {
+  const { userId } = params;
+  const { name, password, profile_Url, about } = await request.json();
+  let user;
+  try {
+    user = await User.findById(userId);
+    user.name = name;
+    user.password = password;
+    user.profile_Url = profile_Url;
+    user.about = about;
+
+    const updatedUser = await user.save();
+    return NextResponse.json(updatedUser);
+  } catch (error) {
+    return NextResponse.json({ error: error });
+  }
+};
+```
